@@ -1,0 +1,5 @@
+.stack-work/
+haskell-ml.cabal
+*~
+.DS_Store
+
