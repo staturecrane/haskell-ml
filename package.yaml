@@ -36,6 +36,7 @@ executables:
     dependencies:
     - haskell-ml
     - hmatrix
+    - split
 
 tests:
   haskell-ml-test:
