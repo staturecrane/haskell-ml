@@ -37,6 +37,7 @@ executables:
     - haskell-ml
     - hmatrix
     - split
+    - mwc-random
 
 tests:
   haskell-ml-test:
