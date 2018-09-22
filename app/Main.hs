@@ -54,19 +54,25 @@ readCSV file = [splitOn "," x | x <- (lines file)]
 
 getNewWeights :: Matrix R -> Matrix R -> Matrix R -> Int -> Matrix R
 getNewWeights inputs targets weights batchSize =
-    updateWeights 0.001 (getGradient inputs targets (forward inputs weights) batchSize) weights
+    updateWeights 0.00001 (getGradient inputs targets (forward inputs weights) batchSize) weights
 
 runTrain :: Matrix R -> Matrix R -> State (Matrix R) (Matrix R)
 runTrain inputs targets = do
     weights <- get
-    forM_ [0..1000] $ \e -> do
+    forM_ [0..10000] $ \e -> do
         put (getNewWeights inputs targets weights 891)
     return weights
+
+activate :: (Ord a1, Fractional a1, Fractional a2) => [a1] -> [a2]
+activate predictions = [if x > 0.5 then 1.0 else 0.0 | x <- predictions ]
+
+accuracy :: [Double] -> [Double] -> Int -> Double
+accuracy targets predictions batchSize = (fromIntegral correct) / (fromIntegral batchSize) where
+    correct = length $ filter (\idx -> targets !! idx == (activate predictions) !! idx) [0..batchSize-1]
 
 main = do
     contents <- readFile "data/titanic/train.csv"
     weights <- rand 1 1
     inputs <- processGender $ tail (readCSV contents)
     targets <- processTargets $ tail (readCSV contents)
-    print $ loss targets (forward inputs (execState (runTrain inputs targets) weights)) 891
-
+    print $ accuracy (concat $ toLists targets) (concat $ toLists $ (forward inputs (execState (runTrain inputs targets) weights))) 891
