@@ -1,14 +1,13 @@
 module Main where
 
 import Data.List.Split
-import Control.Monad.IO.Class
-import Numeric.LinearAlgebra (                       Matrix, scale, R, (><))
+import Control.Monad.State
+import Numeric.LinearAlgebra                         (col, disp, Matrix, R, rand, scale, toLists, tr, (><))
 import Numeric.LinearAlgebra.HMatrix                 (mul, sumElements)
-import qualified System.Random.MWC                   as MWC
-import qualified System.Random.MWC.Distributions     as MWC
 import System.IO
 
 type Gender = Double
+type Survived = Double
 
 meanMatrix :: Matrix R -> Int -> Double
 meanMatrix inputs batchSize = (sumElements inputs) / (fromIntegral batchSize)
@@ -17,7 +16,7 @@ variance :: [Double] -> Double -> Double
 variance inputs mean = sum [(x - mean)**2 | x <- inputs]
 
 mult :: Matrix R -> Matrix R -> Matrix R
-mult inputs weights = (inputs `mul` weights)
+mult inputs weights = (inputs * weights)
 
 sigmoid :: Matrix R -> Matrix R
 sigmoid inputs = 1.0 / (1.0 + exp (-1 * inputs))
@@ -31,24 +30,49 @@ criterion targets logits = (-1 * targets) * (log logits) - (1 - targets) * (log 
 loss :: Matrix R -> Matrix R -> Int -> Double
 loss targets logits batchSize = meanMatrix (criterion targets logits) batchSize
 
+getGradient :: Matrix R -> Matrix R -> Matrix R -> Int -> Matrix R
+getGradient inputs targets logits batchSize = (inputs * (logits - targets)) / (fromIntegral batchSize)
+
 updateWeights :: Double -> Matrix R -> Matrix R -> Matrix R
 updateWeights learningRate gradient weights = (weights - (learningRate `scale` gradient))
 
-process :: [[[Char]]] -> [Gender]
-process inputs = [getGender x | x <- inputs]
+processGender :: [[[Char]]] -> IO (Matrix Gender)
+processGender inputs = do
+    return $ col [getGender x | x <- inputs]
+
+processTargets :: [[[Char]]] -> IO (Matrix Survived)
+processTargets inputs = do
+    return $ col [getTarget x | x <- inputs]
 
 getGender :: [[Char]] -> Gender
 getGender row = case (row !! 5) of
     "male"   -> 0.0
     "female" -> 1.0
-    _ -> 0.0
+
+getTarget :: [[Char]] -> Survived
+getTarget row = fromIntegral $ read $ row !! 1
 
 readCSV :: String -> [[[Char]]]
 readCSV file = [splitOn "," x | x <- (lines file)]
 
-main :: IO ()
-main = MWC.withSystemRandom $ \g -> do
-    -- contents <- readFile "data/titanic/train.csv"
-    -- print ( process (readCSV contents))
-    p0 <- MWC.uniformR (-0.5 :: Double, 0.5 :: Double) g
-    print p0
+-- train :: Matrix R -> Matrix R -> Matrix R -> Int -> Matrix R
+-- train inputs weights targets batchSize = getGradient targets logits inputs batchSize where
+--     logits = forward inputs weights
+
+getNewWeights :: Matrix R -> Matrix R -> Matrix R -> Int -> Matrix R
+getNewWeights inputs targets weights batchSize =
+    updateWeights 0.001 (getGradient inputs targets (forward inputs weights) batchSize) weights
+
+runTrain :: Matrix R -> Matrix R -> State (Matrix R) (Matrix R)
+runTrain inputs targets = do
+    weights <- get
+    put (getNewWeights inputs targets weights 891)
+    return weights
+
+main = do
+    contents <- readFile "data/titanic/train.csv"
+    weights <- rand 1 2
+    inputs <- processGender $ tail (readCSV contents)
+    targets <- processTargets $ tail (readCSV contents)
+    print $ execState (runTrain inputs targets) weights
+

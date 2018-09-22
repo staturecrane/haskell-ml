@@ -36,8 +36,8 @@ executables:
     dependencies:
     - haskell-ml
     - hmatrix
+    - mtl
     - split
-    - mwc-random
 
 tests:
   haskell-ml-test:
