@@ -43,7 +43,7 @@ processTargets inputs = do
 
 getGender :: [[Char]] -> Gender
 getGender row = case (row !! 5) of
-    "male"   -> 0.0
+    "male"   -> -1.0
     "female" -> 1.0
 
 getTarget :: [[Char]] -> Survived
@@ -59,7 +59,7 @@ getNewWeights inputs targets weights batchSize =
 runTrain :: Matrix R -> Matrix R -> State (Matrix R) (Matrix R)
 runTrain inputs targets = do
     weights <- get
-    forM_ [0..50] $ \e -> do
+    forM_ [0..1000] $ \e -> do
         put (getNewWeights inputs targets weights 891)
     return weights
 
@@ -68,5 +68,5 @@ main = do
     weights <- rand 1 1
     inputs <- processGender $ tail (readCSV contents)
     targets <- processTargets $ tail (readCSV contents)
-    print $ loss targets (execState (runTrain inputs targets) weights) 891
+    print $ loss targets (forward inputs (execState (runTrain inputs targets) weights)) 891
 
