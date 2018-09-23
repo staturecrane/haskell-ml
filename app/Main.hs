@@ -20,11 +20,12 @@ main = do
     contents <- readFile "data/titanic/train.csv"
     let weights = matrix 1 [0.0 | _ <- [0..7]]
     let inputs = processFeatures $ tail (readCSV contents)
-    -- let inputs = processGender $ tail (readCSV contents)
     let targets = processTargets $ tail (readCSV contents)
-    let batchSize = 891
+
+    -- subtract the header row
+    let batchSize = (length $ toLists inputs) - 1
     let finalWeights = (execState (runTrain inputs targets batchSize) weights)
     let finalPredictions = forward inputs finalWeights
+
     print $ accuracy (concat $ toLists targets) (concat $ toLists finalPredictions) batchSize
     print $ loss targets finalPredictions batchSize
-    -- print $ maximum [getAge x | x <- tail (readCSV contents)]
