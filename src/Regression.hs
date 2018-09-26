@@ -35,7 +35,7 @@ getNewWeights inputs targets weights batchSize =
 runTrain :: Matrix R -> Matrix R -> Int -> State (Matrix R) (Matrix R)
 runTrain inputs targets batchSize = do
     weights <- get
-    forM_ [0..5000] $ \e -> do
+    forM_ [0..500] $ \e -> do
         put (getNewWeights inputs targets weights batchSize)
     return weights
 

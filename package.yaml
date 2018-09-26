@@ -38,6 +38,7 @@ executables:
     - hmatrix
     - mtl
     - split
+    - vector
 
 tests:
   haskell-ml-test:
